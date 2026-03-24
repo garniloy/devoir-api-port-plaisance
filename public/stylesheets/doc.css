@@ -1,0 +1,298 @@
+
+    /* ---- INDEX PAGE SPECIFIC ---- */
+    :root {
+  --bg: #f5f7fa;
+  --white: #ffffff;
+  --text-primary: #1f2937;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --blue: #2563eb;
+  --blue-hover: #1d4ed8;
+  --blue-soft: rgba(37, 99, 235, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 10px 25px rgba(0,0,0,0.05);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+  --get: #059669; --get-bg: #ecfdf5;
+  --post: #2563eb; --post-bg: #eff6ff;
+  --put: #d97706; --put-bg: #fffbeb;
+  --delete: #dc2626; --delete-bg: #fef2f2;
+}
+    .index-hero {
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+    .header { background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .header-content { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+    .logo { font-size: 1.5rem; font-weight: 600; color: #111827; text-decoration: none; }
+    .logo span { color: var(--blue); }
+    .header-nav { display: flex; gap: 24px; align-items: center; }
+    .doc-link { text-decoration: none; font-size: 0.9rem; color: var(--blue); transition: 0.2s; }
+    .doc-link:hover { color: var(--blue-hover); }
+
+    .index-hero .eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--blue);
+      margin-bottom: 14px;
+    }
+
+    .index-hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 14px;
+      line-height: 1.2;
+    }
+
+    .index-hero p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 540px;
+      line-height: 1.7;
+    }
+
+    /* ---- RESOURCE CARDS ---- */
+    .resources-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 52px;
+    }
+
+    .resource-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 28px 26px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+    }
+
+    .resource-card:hover {
+      box-shadow: 0 16px 40px rgba(37, 99, 235, 0.1);
+      border-color: #bfdbfe;
+      transform: translateY(-2px);
+    }
+
+    .resource-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .icon-users       { background: #eff6ff; }
+    .icon-catways     { background: #ecfdf5; }
+    .icon-reservations{ background: #fffbeb; }
+
+    .resource-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .resource-card p {
+      font-size: 0.855rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .resource-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+
+    .endpoint-count {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .card-arrow {
+      font-size: 0.8rem;
+      color: var(--blue);
+      font-weight: 600;
+      transition: transform 0.15s;
+    }
+
+    .resource-card:hover .card-arrow {
+      transform: translateX(4px);
+    }
+
+    /* ---- METHOD TAGS ROW ---- */
+    .method-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    /* ---- QUICK REF SECTION ---- */
+    .quick-ref {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      margin-bottom: 52px;
+    }
+
+    .quick-ref-header {
+      padding: 16px 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #111827;
+    }
+
+    .quick-ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.855rem;
+    }
+
+    .quick-ref-table th {
+      text-align: left;
+      padding: 10px 20px;
+      background: var(--bg);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .quick-ref-table td {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .quick-ref-table tr:last-child td { border-bottom: none; }
+
+    .quick-ref-table tr:hover td { background: var(--bg); }
+
+    .qr-path {
+      font-family: "SF Mono","Fira Code",monospace;
+      font-size: 0.82rem;
+      color: #111827;
+    }
+
+    .qr-desc {
+      color: var(--text-muted);
+    }
+
+    .qr-link {
+      color: var(--blue);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .qr-link:hover { text-decoration: underline; }
+
+    /* ---- CONVENTIONS SECTION ---- */
+    .conventions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 52px;
+    }
+
+    .convention-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 22px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .convention-card h4 {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 10px;
+    }
+
+    .convention-card p, .convention-card li {
+      font-size: 0.845rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .convention-card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .convention-card ul li {
+      padding: 3px 0;
+      display: flex;
+      gap: 8px;
+    }
+
+    .convention-card ul li::before {
+      content: "–";
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+
+    /* ---- INDEX FOOTER ---- */
+    .index-footer {
+      padding: 24px 0 40px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .index-footer a {
+      color: var(--blue);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .index-footer a:hover { color: var(--blue-hover); }
+
+    /* ---- SECTION TITLE ---- */
+    .section-heading {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 18px;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 900px) {
+      .resources-grid { grid-template-columns: 1fr 1fr; }
+      .conventions-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .resources-grid { grid-template-columns: 1fr; }
+      .index-hero h1 { font-size: 1.8rem; }
+    }
+  

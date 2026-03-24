@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users — Marina API Docs</title>
+  <link rel="stylesheet" href="/stylesheets/doc-page.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <a href="/" class="logo">Port de<span>Plaisance</span></a>
+      <nav class="header-nav">
+        <a href="/documentation" class="doc-link">Documentation</a>
+        <a href="/dashboard" class="doc-link">Dashboard</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+<div class="doc-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Introduction</a></li>
+        <li><a href="authentication.html">Authentication</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Resources</div>
+      <ul class="sidebar-nav">
+        <li><a href="catways.html">Catways</a></li>
+        <li><a href="reservations.html">Reservations</a></li>
+        <li><a href="users.html" class="active">Users</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Endpoints</div>
+      <ul class="sidebar-nav">
+        <li><a href="#register"><span class="method-badge badge-post">POST</span> Register</a></li>
+        <li><a href="#get-all-users"><span class="method-badge badge-get">GET</span> List all</a></li>
+        <li><a href="#get-user"><span class="method-badge badge-get">GET</span> Get one</a></li>
+        <li><a href="#update-user"><span class="method-badge badge-put">PUT</span> Update</a></li>
+        <li><a href="#delete-user"><span class="method-badge badge-delete">DEL</span> Delete</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="doc-content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="/documentation">Documentation</a>
+        <span>›</span> Resources
+        <span>›</span> Users
+      </div>
+      <h1>Users</h1>
+      <p class="subtitle">Manage marina staff and operator accounts — register, list, retrieve, update credentials, and delete users.</p>
+      <div class="base-url-bar">
+        <span class="label">Base URL</span>
+        <code>/users</code>
+      </div>
+    </div>
+
+    <div class="callout callout-danger">
+      <span class="callout-icon">🔒</span>
+      <div><strong>Security sensitive resource.</strong> User passwords are hashed with <strong>bcrypt (cost factor 10)</strong> before storage. Plain-text passwords are never persisted or returned. Treat all user endpoints as protected routes in production.</div>
+    </div>
+
+    <!-- DATA MODEL -->
+    <div class="doc-section" id="data-model">
+      <h2>Data Model</h2>
+      <p>User documents are stored in MongoDB. Passwords are always stored as bcrypt hashes — they are never returned in any response.</p>
+
+      <div class="model-card">
+        <div class="model-card-header">
+          <span class="model-name">User</span>
+          <span class="model-badge">MongoDB / Mongoose</span>
+        </div>
+        <table class="params-table">
+          <thead>
+            <tr><th>Field</th><th>Type</th><th>Constraints</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="param-name">_id</span></td>
+              <td><span class="param-type">ObjectId</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>MongoDB unique identifier, generated automatically.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">name</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>Full display name of the user.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">email</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span> <span class="badge-required">unique</span></td>
+              <td>Email address. Acts as the primary identifier for route lookups (<code>:email</code>). Must be unique across all users.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">password</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>Bcrypt hash of the user's password. <strong>Never returned in responses.</strong></td>
+            </tr>
+            <tr>
+              <td><span class="param-name">createdAt</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>Timestamp of document creation, managed by Mongoose.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">updatedAt</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>Timestamp of last modification, managed by Mongoose.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div><strong>Response projection:</strong> List and single-user GET endpoints explicitly project <code>name</code> and <code>email</code> only — <code>password</code> and <code>__v</code> are stripped from all read responses. Registration and update endpoints return <code>id</code>, <code>name</code>, and <code>email</code>.</div>
+      </div>
+    </div>
+
+    <!-- VALIDATION RULES -->
+    <div class="doc-section" id="validation">
+      <h2>Validation Rules</h2>
+      <ul class="validation-list">
+        <li>All three fields (<code>name</code>, <code>email</code>, <code>password</code>) are mandatory on <strong>registration</strong>. Missing any one causes a Mongoose validation error and a <code>400</code> response.</li>
+        <li><strong>email</strong> must be unique. Attempting to register with an already-used address returns <code>400</code> with the Mongoose duplicate-key error message.</li>
+        <li><strong>password</strong> is hashed with <code>bcrypt.hash(password, 10)</code> before any database write — both on creation and on update. You must always send the raw plain-text password; the API handles hashing internally.</li>
+        <li>Routes use <code>:email</code> as the URL identifier — not <code>_id</code>. Always URL-encode email addresses that contain special characters (e.g. <code>user%40example.com</code>).</li>
+        <li>On <strong>update</strong>, only the fields present in the body are applied. <code>name</code>, <code>email</code>, and <code>password</code> can all be updated independently. Omitting a field means it is not touched.</li>
+        <li>Changing a user's <code>email</code> via the update endpoint changes their URL identifier for all future requests — update stored references accordingly.</li>
+        <li>The <code>getAll</code> endpoint returns a <code>404</code> when the users collection is entirely empty, but does <strong>not</strong> stop execution before the subsequent <code>200</code> send — see the real-world note on the List endpoint.</li>
+      </ul>
+    </div>
+
+    <!-- ENDPOINTS -->
+    <div class="doc-section" id="endpoints">
+      <h2>Endpoints</h2>
+
+      <!-- POST /users — register -->
+      <div class="endpoint-card" id="register">
+        <div class="endpoint-header">
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/users</span>
+          <span class="endpoint-summary">Register a new user</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body open">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Creates a new user account. The password is hashed with bcrypt before being stored. The response never includes the password hash.
+          </p>
+
+          <h3>Request Body</h3>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">name</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Full name of the user.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">email</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Unique email address.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">password</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Plain-text password. Hashed server-side before storage.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON Body</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code>{
+  <span class="tk">"name"</span>:     <span class="ts">"Alice Martin"</span>,
+  <span class="tk">"email"</span>:    <span class="ts">"alice@marina.fr"</span>,
+  <span class="tk">"password"</span>: <span class="ts">"s3cur3P@ssword"</span>
+}</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="u201">201 Created</button>
+              <button class="resp-tab" data-tab="u400">400 Bad Request</button>
+            </div>
+            <div class="resp-panel active" data-tab="u201">
+              <span class="status-pill s2xx">● 201 Created</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returns only <code>id</code>, <code>name</code>, and <code>email</code>. Password hash is never included.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"id"</span>:    <span class="ts">"664c3e1a2f7d8b001e0a1b2c"</span>,
+  <span class="tk">"name"</span>:  <span class="ts">"Alice Martin"</span>,
+  <span class="tk">"email"</span>: <span class="ts">"alice@marina.fr"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="u400">
+              <span class="status-pill s4xx">● 400 Bad Request</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returned when a field is missing or the email already exists (duplicate key error).</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"Bad body request"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"E11000 duplicate key error collection: marina.users index: email_1 dup key: { email: \"alice@marina.fr\" }"</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning" style="margin-top:16px">
+            <span class="callout-icon">⚠️</span>
+            <div><strong>Real-world note:</strong> There is currently no email format validation at the application layer — Mongoose only enforces uniqueness and presence. Consider adding a regex validator or a library like <code>validator.js</code> to reject malformed email addresses before they reach the database.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET /users — list all -->
+      <div class="endpoint-card" id="get-all-users">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/users</span>
+          <span class="endpoint-summary">List all users</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body open">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Returns all user accounts projected to <code>name</code> and <code>email</code> only. Password hashes are never returned.
+          </p>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tk">GET</span> /users</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="ug200">200 OK</button>
+              <button class="resp-tab" data-tab="ug404">404 Empty</button>
+              <button class="resp-tab" data-tab="ug500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="ug200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>[
+  {
+    <span class="tk">"_id"</span>:   <span class="ts">"664c3e1a2f7d8b001e0a1b2c"</span>,
+    <span class="tk">"name"</span>:  <span class="ts">"Alice Martin"</span>,
+    <span class="tk">"email"</span>: <span class="ts">"alice@marina.fr"</span>
+  },
+  {
+    <span class="tk">"_id"</span>:   <span class="ts">"664c3e1a2f7d8b001e0a1b2d"</span>,
+    <span class="tk">"name"</span>:  <span class="ts">"Bob Leclerc"</span>,
+    <span class="tk">"email"</span>: <span class="ts">"bob@marina.fr"</span>
+  }
+]</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ug404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Sent when the collection is empty — but see the note below.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"Database error"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"no user found"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ug500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Internal server error"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-danger" style="margin-top:16px">
+            <span class="callout-icon">🚨</span>
+            <div><strong>Known behaviour:</strong> When the collection is empty, the service sends a <code>404</code> JSON body but does <em>not</em> <code>return</code> early — execution continues and a second <code>res.status(200).json(users)</code> call fires immediately after. This causes a <em>"headers already sent"</em> Node.js warning. Clients will typically receive the <code>404</code> body. This should be fixed by adding a <code>return</code> before the 404 send.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET /:email -->
+      <div class="endpoint-card" id="get-user">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/users/:email</span>
+          <span class="endpoint-summary">Get a single user</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Returns one user document by email address, projected to <code>name</code> and <code>email</code>.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">email</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The user's email address. URL-encode <code>@</code> as <code>%40</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tk">GET</span> /users/alice%40marina.fr</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="us200">200 OK</button>
+              <button class="resp-tab" data-tab="us404">404 Not Found</button>
+              <button class="resp-tab" data-tab="us500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="us200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"_id"</span>:   <span class="ts">"664c3e1a2f7d8b001e0a1b2c"</span>,
+  <span class="tk">"name"</span>:  <span class="ts">"Alice Martin"</span>,
+  <span class="tk">"email"</span>: <span class="ts">"alice@marina.fr"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="us404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"Database error"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"User not found"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="us500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Internal server error"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning" style="margin-top:16px">
+            <span class="callout-icon">⚠️</span>
+            <div><strong>Known behaviour:</strong> Same double-send issue as <code>getAll</code> — the <code>404</code> branch lacks a <code>return</code>, so the <code>200</code> send fires right after. Clients receive the <code>404</code> body in practice.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PUT /:email -->
+      <div class="endpoint-card" id="update-user">
+        <div class="endpoint-header">
+          <span class="method-badge badge-put">PUT</span>
+          <span class="endpoint-path">/users/:email</span>
+          <span class="endpoint-summary">Update a user</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Updates one or more user fields. Only fields present in the body are modified. If <code>password</code> is included, it is re-hashed before storage.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">email</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Current email address of the user to update.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Request Body</h3>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">name</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-optional">optional</span></td>
+                <td>New display name.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">email</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-optional">optional</span></td>
+                <td>New email. <strong>Changes the URL identifier</strong> for all subsequent requests.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">password</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-optional">optional</span></td>
+                <td>New plain-text password. Will be bcrypt-hashed before saving.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON Body</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code>{
+  <span class="tk">"name"</span>: <span class="ts">"Alice Dupont"</span>
+}</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="uu200">200 OK</button>
+              <button class="resp-tab" data-tab="uu404">404 Not Found</button>
+              <button class="resp-tab" data-tab="uu500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="uu200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returns <code>id</code>, <code>name</code>, and <code>email</code> of the updated user. Password hash is never returned.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"id"</span>:    <span class="ts">"664c3e1a2f7d8b001e0a1b2c"</span>,
+  <span class="tk">"name"</span>:  <span class="ts">"Alice Dupont"</span>,
+  <span class="tk">"email"</span>: <span class="ts">"alice@marina.fr"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="uu404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"User not found"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="uu500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error updating user"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning" style="margin-top:16px">
+            <span class="callout-icon">⚠️</span>
+            <div><strong>Real-world note:</strong> Updating <code>email</code> changes the URL key used to look up this user on all subsequent <code>GET</code>, <code>PUT</code>, and <code>DELETE</code> calls. If your frontend stores user URLs or email references, update them immediately after a successful email change.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE /:email -->
+      <div class="endpoint-card" id="delete-user">
+        <div class="endpoint-header">
+          <span class="method-badge badge-delete">DELETE</span>
+          <span class="endpoint-path">/users/:email</span>
+          <span class="endpoint-summary">Delete a user</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Permanently removes a user account. Returns the deleted user's basic info for confirmation.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">email</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Email address of the user to delete.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tk">DELETE</span> /users/alice%40marina.fr</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="ud200">200 OK</button>
+              <button class="resp-tab" data-tab="ud404">404 Not Found</button>
+              <button class="resp-tab" data-tab="ud500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="ud200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"issues"</span>: <span class="ts">"deleted"</span>,
+  <span class="tk">"id"</span>:     <span class="ts">"664c3e1a2f7d8b001e0a1b2c"</span>,
+  <span class="tk">"name"</span>:   <span class="ts">"Alice Martin"</span>,
+  <span class="tk">"email"</span>:  <span class="ts">"alice@marina.fr"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ud404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"User not found"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ud500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Note: the error message label reads <code>"Error updating user"</code> — this is a copy-paste artefact in the source code; it is still returned on a delete failure.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error updating user"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-danger" style="margin-top:16px">
+            <span class="callout-icon">🚨</span>
+            <div><strong>Real-world note:</strong> Deleting a user does not revoke any active sessions or tokens. If your authentication layer issues JWTs, ensure they are short-lived or maintain a token blocklist so that deleted users cannot continue to authenticate after removal.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /endpoints section -->
+
+    <!-- FOOTER -->
+    <div class="doc-footer">
+      <a href="reservations.html">← Reservations</a>
+      <span style="color:var(--text-muted)">End of documentation</span>
+    </div>
+
+  </main>
+
+  <!-- TABLE OF CONTENTS -->
+  <aside class="toc-col">
+    <div class="toc-box">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#data-model">Data Model</a></li>
+        <li><a href="#validation">Validation Rules</a></li>
+        <li><a href="#endpoints">Endpoints</a></li>
+        <li><a href="#register">POST — Register</a></li>
+        <li><a href="#get-all-users">GET — List all</a></li>
+        <li><a href="#get-user">GET — Get one</a></li>
+        <li><a href="#update-user">PUT — Update</a></li>
+        <li><a href="#delete-user">DELETE — Delete</a></li>
+      </ul>
+    </div>
+  </aside>
+
+</div>
+</div>
+
+<script src="/javascripts/doc-page.js"></script>
+</body>
+</html>

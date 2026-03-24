@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catways — Marina API Docs</title>
+  <link rel="stylesheet" href="/stylesheets/doc-page.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <a href="/" class="logo">Port de<span>Plaisance</span></a>
+      <nav class="header-nav">
+        <a href="/documentation" class="doc-link">Documentation</a>
+        <a href="/dashboard" class="doc-link">Dashboard</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- DOC LAYOUT -->
+<div class="container">
+<div class="doc-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Introduction</a></li>
+        <li><a href="authentication.html">Authentication</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Resources</div>
+      <ul class="sidebar-nav">
+        <li><a href="catways.html" class="active">Catways</a></li>
+        <li><a href="reservations.html">Reservations</a></li>
+        <li><a href="users.html">Users</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Endpoints</div>
+      <ul class="sidebar-nav">
+        <li><a href="#create-catway"><span class="method-badge badge-post">POST</span> Create</a></li>
+        <li><a href="#get-all-catways"><span class="method-badge badge-get">GET</span> List all</a></li>
+        <li><a href="#get-catway"><span class="method-badge badge-get">GET</span> Get one</a></li>
+        <li><a href="#update-catway"><span class="method-badge badge-put">PUT</span> Update</a></li>
+        <li><a href="#delete-catway"><span class="method-badge badge-delete">DEL</span> Delete</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="doc-content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="/documentation">Documentation</a>
+        <span>›</span> Resources
+        <span>›</span> Catways
+      </div>
+      <h1>Catways</h1>
+      <p class="subtitle">Manage marina berths (catways) — create, list, retrieve, update, and delete individual berth slots.</p>
+      <div class="base-url-bar">
+        <span class="label">Base URL</span>
+        <code>/catways</code>
+      </div>
+    </div>
+
+    <!-- DATA MODEL -->
+    <div class="doc-section" id="data-model">
+      <h2>Data Model</h2>
+      <p>Every catway is stored as a MongoDB document. Below is the full schema with field types, constraints, and descriptions.</p>
+
+      <div class="model-card">
+        <div class="model-card-header">
+          <span class="model-name">Catway</span>
+          <span class="model-badge">MongoDB / Mongoose</span>
+        </div>
+        <table class="params-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Constraints</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="param-name">_id</span></td>
+              <td><span class="param-type">ObjectId</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>MongoDB unique identifier, generated automatically.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">catwayNumber</span></td>
+              <td><span class="param-type">Number</span></td>
+              <td><span class="badge-required">required</span> <span class="badge-required">unique</span></td>
+              <td>Logical berth number within the marina. Must be unique across all catways.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">catwayType</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span> enum</td>
+              <td>
+                Physical size of the berth.
+                <div class="enum-list" style="margin-top:6px">
+                  <span class="enum-val">short</span>
+                  <span class="enum-val">long</span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="param-name">catwayState</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>Free-text description of the current physical condition of the berth (e.g. "Good condition", "Rope broken").</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">createdAt</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>Timestamp of document creation. Added automatically by Mongoose <code style="font-size:0.8rem">timestamps: true</code>.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">updatedAt</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>Timestamp of last modification. Updated automatically by Mongoose.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div><strong>Timestamps</strong> — Both <code>createdAt</code> and <code>updatedAt</code> are managed by Mongoose and are always present in responses. You never need to send them in a request body.</div>
+      </div>
+    </div>
+
+    <!-- VALIDATION RULES -->
+    <div class="doc-section" id="validation">
+      <h2>Validation Rules</h2>
+      <ul class="validation-list">
+        <li><strong>catwayNumber</strong> must be a positive integer and must not already exist in the database. Attempting to create a catway with an already-used number returns <code>500</code>.</li>
+        <li><strong>catwayType</strong> accepts only <code>short</code> or <code>long</code>. Any other value is rejected with <code>400</code>.</li>
+        <li><strong>catwayState</strong> is a required free-text field. Sending an empty string or omitting it causes a validation error.</li>
+        <li>All three fields (<code>catwayNumber</code>, <code>catwayType</code>, <code>catwayState</code>) are mandatory on <strong>creation</strong>.</li>
+        <li>On <strong>update</strong>, only <code>catwayType</code> and <code>catwayState</code> can be changed. <code>catwayNumber</code> is immutable after creation.</li>
+        <li>Omitting all optional update fields results in a no-op (the document is not modified, but a <code>200</code> is returned).</li>
+      </ul>
+    </div>
+
+    <!-- ENDPOINTS -->
+    <div class="doc-section" id="endpoints">
+      <h2>Endpoints</h2>
+
+      <!-- POST /catways -->
+      <div class="endpoint-card" id="create-catway">
+        <div class="endpoint-header">
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/catways</span>
+          <span class="endpoint-summary">Create a new catway</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body open">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Creates a new marina berth. All three body fields are required. The <code>catwayNumber</code> must be unique.
+          </p>
+
+          <h3>Request Body</h3>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">catwayNumber</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Unique integer identifying this berth.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">catwayType</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Must be <code>short</code> or <code>long</code>.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">catwayState</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Free-text condition description.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper">
+            <div class="code-block">
+              <div class="code-block-header">
+                <span class="code-lang">JSON Body</span>
+                <button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button>
+              </div>
+              <pre><code>{
+  <span class="tk">"catwayNumber"</span>: <span class="tn">12</span>,
+  <span class="tk">"catwayType"</span>:   <span class="ts">"long"</span>,
+  <span class="tk">"catwayState"</span>:  <span class="ts">"Good condition, recently inspected"</span>
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="201">201 Created</button>
+              <button class="resp-tab" data-tab="400">400 Bad Request</button>
+              <button class="resp-tab" data-tab="500">500 Conflict</button>
+            </div>
+
+            <div class="resp-panel active" data-tab="201">
+              <span class="status-pill s2xx">● 201 Created</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"_id"</span>:          <span class="ts">"664a1f3c2e4b5a001c8d9f12"</span>,
+  <span class="tk">"catwayNumber"</span>: <span class="tn">12</span>,
+  <span class="tk">"catwayType"</span>:   <span class="ts">"long"</span>,
+  <span class="tk">"catwayState"</span>:  <span class="ts">"Good condition, recently inspected"</span>,
+  <span class="tk">"createdAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>,
+  <span class="tk">"updatedAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <div class="resp-panel" data-tab="400">
+              <span class="status-pill s4xx">● 400 Bad Request</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returned when a required field is missing or a value fails Mongoose validation (e.g. invalid enum).</p>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"Bad request"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"catwayType: `medium` is not a valid enum value for path `catwayType`."</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+
+            <div class="resp-panel" data-tab="500">
+              <span class="status-pill s5xx">● 500 Conflict</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returned when <code>catwayNumber</code> already exists in the database.</p>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"No processible action"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"This number of catway already exists. The actual last number is 15, so you can create number from 16"</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div><!-- /response-section -->
+
+          <div class="callout callout-warning" style="margin-top:16px">
+            <span class="callout-icon">⚠️</span>
+            <div><strong>Real-world note:</strong> Even though the 500 response hints at the "next available" number, you should always query <code>GET /catways</code> first to understand the current state of berths before assigning a new number. Numbers are business-relevant and should not be assigned blindly.</div>
+          </div>
+        </div>
+      </div><!-- /endpoint-card POST -->
+
+      <!-- GET /catways -->
+      <div class="endpoint-card" id="get-all-catways">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/catways</span>
+          <span class="endpoint-summary">List all catways</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body open">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Returns the full array of catway documents. No query parameters are accepted.
+          </p>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper">
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code><span class="tk">GET</span> /catways</code></pre>
+            </div>
+          </div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="200a">200 OK</button>
+              <button class="resp-tab" data-tab="404a">404 Empty</button>
+              <button class="resp-tab" data-tab="500a">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="200a">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>[
+  {
+    <span class="tk">"_id"</span>:          <span class="ts">"664a1f3c2e4b5a001c8d9f12"</span>,
+    <span class="tk">"catwayNumber"</span>: <span class="tn">1</span>,
+    <span class="tk">"catwayType"</span>:   <span class="ts">"short"</span>,
+    <span class="tk">"catwayState"</span>:  <span class="ts">"Good condition"</span>,
+    <span class="tk">"createdAt"</span>:    <span class="ts">"2024-05-10T08:00:00.000Z"</span>,
+    <span class="tk">"updatedAt"</span>:    <span class="ts">"2024-05-10T08:00:00.000Z"</span>
+  },
+  {
+    <span class="tk">"_id"</span>:          <span class="ts">"664a1f3c2e4b5a001c8d9f13"</span>,
+    <span class="tk">"catwayNumber"</span>: <span class="tn">2</span>,
+    <span class="tk">"catwayType"</span>:   <span class="ts">"long"</span>,
+    <span class="tk">"catwayState"</span>:  <span class="ts">"Rope damaged on port side"</span>,
+    <span class="tk">"createdAt"</span>:    <span class="ts">"2024-05-12T14:30:00.000Z"</span>,
+    <span class="tk">"updatedAt"</span>:    <span class="ts">"2024-05-14T09:10:00.000Z"</span>
+  }
+]</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="404a">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returned when the catways collection is empty (no documents at all).</p>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"Database error"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"No catways found"</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="500a">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Internal server error"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"MongoNetworkError: ..."</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /GET all -->
+
+      <!-- GET /:catwayNumber -->
+      <div class="endpoint-card" id="get-catway">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/catways/:catwayNumber</span>
+          <span class="endpoint-summary">Get a single catway</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">Returns one catway document identified by its numeric berth number.</p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">catwayNumber</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The unique integer berth number.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper">
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code><span class="tk">GET</span> /catways/12</code></pre>
+            </div>
+          </div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="200b">200 OK</button>
+              <button class="resp-tab" data-tab="404b">404 Not Found</button>
+              <button class="resp-tab" data-tab="500b">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="200b">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"_id"</span>:          <span class="ts">"664a1f3c2e4b5a001c8d9f12"</span>,
+  <span class="tk">"catwayNumber"</span>: <span class="tn">12</span>,
+  <span class="tk">"catwayType"</span>:   <span class="ts">"long"</span>,
+  <span class="tk">"catwayState"</span>:  <span class="ts">"Good condition, recently inspected"</span>,
+  <span class="tk">"createdAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>,
+  <span class="tk">"updatedAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="404b">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"issue"</span>:   <span class="ts">"Database error"</span>,
+  <span class="tk">"details"</span>: <span class="ts">"Catway not found"</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="500b">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Internal server error"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-info" style="margin-top:16px">
+            <span class="callout-icon">ℹ️</span>
+            <div><strong>Note:</strong> The route uses <code>:catwayNumber</code> (a sequential integer), <em>not</em> the MongoDB <code>_id</code>. Always use the human-readable berth number in your URLs.</div>
+          </div>
+        </div>
+      </div><!-- /GET one -->
+
+      <!-- PUT /:catwayNumber -->
+      <div class="endpoint-card" id="update-catway">
+        <div class="endpoint-header">
+          <span class="method-badge badge-put">PUT</span>
+          <span class="endpoint-path">/catways/:catwayNumber</span>
+          <span class="endpoint-summary">Update a catway</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Partially updates a catway. Only <code>catwayType</code> and <code>catwayState</code> can be changed — <code>catwayNumber</code> is immutable. Send only the fields you want to change.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">catwayNumber</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Berth number of the catway to update.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Request Body</h3>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">catwayType</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-optional">optional</span></td>
+                <td><code>short</code> or <code>long</code>.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">catwayState</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-optional">optional</span></td>
+                <td>New condition description.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper">
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON Body</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>{
+  <span class="tk">"catwayState"</span>: <span class="ts">"Port-side rope replaced, now in excellent condition"</span>
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="200c">200 OK</button>
+              <button class="resp-tab" data-tab="404c">404 Not Found</button>
+              <button class="resp-tab" data-tab="500c">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="200c">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returns the updated document (uses <code>returnDocument: 'after'</code>).</p>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"_id"</span>:          <span class="ts">"664a1f3c2e4b5a001c8d9f12"</span>,
+  <span class="tk">"catwayNumber"</span>: <span class="tn">12</span>,
+  <span class="tk">"catwayType"</span>:   <span class="ts">"long"</span>,
+  <span class="tk">"catwayState"</span>:  <span class="ts">"Port-side rope replaced, now in excellent condition"</span>,
+  <span class="tk">"createdAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>,
+  <span class="tk">"updatedAt"</span>:    <span class="ts">"2024-05-20T08:45:00.000Z"</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="404c">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Catway not found"</span> }</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="500c">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error updating catway"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-tip" style="margin-top:16px">
+            <span class="callout-icon">💡</span>
+            <div><strong>Tip:</strong> The update is non-destructive — omitting a field means it won't be changed. You can update only the state without touching the type, and vice versa.</div>
+          </div>
+        </div>
+      </div><!-- /PUT -->
+
+      <!-- DELETE /:catwayNumber -->
+      <div class="endpoint-card" id="delete-catway">
+        <div class="endpoint-header">
+          <span class="method-badge badge-delete">DELETE</span>
+          <span class="endpoint-path">/catways/:catwayNumber</span>
+          <span class="endpoint-summary">Delete a catway</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Permanently removes a catway. This action is <strong>irreversible</strong>. Ensure no active reservations exist for this berth before deleting.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">catwayNumber</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Berth number of the catway to delete.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper">
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code><span class="tk">DELETE</span> /catways/12</code></pre>
+            </div>
+          </div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="200d">200 OK</button>
+              <button class="resp-tab" data-tab="404d">404 Not Found</button>
+              <button class="resp-tab" data-tab="500d">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="200d">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returns a confirmation message and the deleted document.</p>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Catway deleted"</span>,
+  <span class="tk">"catway"</span>: {
+    <span class="tk">"_id"</span>:          <span class="ts">"664a1f3c2e4b5a001c8d9f12"</span>,
+    <span class="tk">"catwayNumber"</span>: <span class="tn">12</span>,
+    <span class="tk">"catwayType"</span>:   <span class="ts">"long"</span>,
+    <span class="tk">"catwayState"</span>:  <span class="ts">"Good condition, recently inspected"</span>,
+    <span class="tk">"createdAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>,
+    <span class="tk">"updatedAt"</span>:    <span class="ts">"2024-05-19T10:23:01.000Z"</span>
+  }
+}</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="404d">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Catway not found"</span> }</code></pre>
+                </div>
+              </div>
+            </div>
+            <div class="resp-panel" data-tab="500d">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper">
+                <div class="code-block">
+                  <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                  <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error deleting catway"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-danger" style="margin-top:16px">
+            <span class="callout-icon">🚨</span>
+            <div><strong>Real-world note:</strong> The API does not currently cascade-delete reservations linked to this catway. Before deleting a berth, manually verify — or programmatically check via <code>GET /catways/:id/reservations</code> — that no active or future reservations exist for this slot. See the <a href="reservations.html" style="color:inherit;text-decoration:underline">Reservations docs</a> for details.</div>
+          </div>
+        </div>
+      </div><!-- /DELETE -->
+
+    </div><!-- /endpoints section -->
+
+    <!-- RELATED -->
+    <div class="doc-section" id="related">
+      <h2>Related Resources</h2>
+      <p>Reservations are nested under catways in the route tree but are documented separately for clarity.</p>
+      <div class="callout callout-tip">
+        <span class="callout-icon">🔗</span>
+        <div>
+          <strong>Reservations</strong> — Each catway can have multiple reservations.
+          The full reservation CRUD lives at <code>/catways/:id/reservations</code>.
+          See the <a href="reservations.html" style="color:var(--blue);">Reservations documentation</a> for all endpoints, the data model, and real-world usage notes.
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="doc-footer">
+      <span>Marina API Docs</span>
+      <div style="display:flex;gap:20px">
+        <a href="reservations.html">Next: Reservations →</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- TABLE OF CONTENTS -->
+  <aside class="toc-col">
+    <div class="toc-box">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#data-model">Data Model</a></li>
+        <li><a href="#validation">Validation Rules</a></li>
+        <li><a href="#endpoints">Endpoints</a></li>
+        <li><a href="#create-catway">POST /catways</a></li>
+        <li><a href="#get-all-catways">GET /catways</a></li>
+        <li><a href="#get-catway">GET /:catwayNumber</a></li>
+        <li><a href="#update-catway">PUT /:catwayNumber</a></li>
+        <li><a href="#delete-catway">DELETE /:catwayNumber</a></li>
+        <li><a href="#related">Related Resources</a></li>
+      </ul>
+    </div>
+  </aside>
+
+</div><!-- /doc-layout -->
+</div><!-- /container -->
+
+<script src="/javascripts/doc-page.js"></script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Marina API</title>
+  <link rel="stylesheet" href="/stylesheets/dash.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">Port de<span>Plaisance</span></a>
+      <nav class="header-nav">
+        <a href="/documentation" class="nav-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Documentation
+        </a>
+        <a href="/logout" class="nav-link nav-link-logout">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log out
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page-wrapper">
+
+    <!-- TOP BAR: user info + date -->
+    <div class="top-bar">
+      <div class="user-block">
+        <div class="user-avatar" id="user-avatar">–</div>
+        <div class="user-details">
+          <span class="user-name" id="user-name">Loading…</span>
+          <span class="user-email" id="user-email"></span>
+        </div>
+      </div>
+      <div class="date-block">
+        <span class="date-label">Today</span>
+        <span class="date-value" id="current-date"></span>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="dashboard-grid">
+
+      <!-- LEFT: reservations table -->
+      <section class="panel panel-reservations">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Ongoing Reservations
+          </div>
+          <span class="reservation-count" id="reservation-count">–</span>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="reservations-table">
+            <thead>
+              <tr>
+                <th>Catway</th>
+                <th>Client</th>
+                <th>Boat</th>
+                <th>End Date</th>
+              </tr>
+            </thead>
+            <tbody id="reservations-tbody">
+              <tr class="table-loading">
+                <td colspan="4">
+                  <div class="loading-row">
+                    <span class="spinner"></span> Loading reservations…
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- RIGHT: API fetch tool -->
+      <section class="panel panel-fetch">
+        <div class="panel-header">
+          <div class="panel-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            API Explorer
+          </div>
+          <a href="/documentation" class="panel-link">Docs →</a>
+        </div>
+
+        <div class="fetch-form">
+
+          <!-- METHOD + URL -->
+          <div class="url-row">
+            <select id="method" class="method-select">
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+            </select>
+            <input id="url" type="text" class="url-input" placeholder="/catways" />
+            <button id="send-btn" class="send-btn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send
+            </button>
+          </div>
+
+          <!-- TABS -->
+          <div class="fetch-tabs">
+            <button class="fetch-tab active" data-tab="headers-tab">Headers</button>
+            <button class="fetch-tab" data-tab="body-tab">Body</button>
+          </div>
+
+          <!-- HEADERS TAB -->
+          <div class="fetch-tab-panel active" id="headers-tab">
+            <div class="headers-list" id="headers-list">
+              <!-- default Content-Type header -->
+              <div class="header-row" data-default>
+                <input type="text" class="header-key" value="Content-Type" placeholder="Key" />
+                <input type="text" class="header-val" value="application/json" placeholder="Value" />
+                <button class="header-remove locked" title="Default header" disabled>–</button>
+              </div>
+            </div>
+            <button id="add-header-btn" class="add-row-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add header
+            </button>
+          </div>
+
+          <!-- BODY TAB -->
+          <div class="fetch-tab-panel" id="body-tab">
+            <div class="body-controls">
+              <span class="body-hint">JSON body (for POST / PUT)</span>
+              <button id="format-btn" class="icon-btn" title="Format JSON">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                Format
+              </button>
+            </div>
+            <textarea id="body-input" class="body-textarea" placeholder='{"key": "value"}'></textarea>
+          </div>
+
+          <!-- RESPONSE -->
+          <div class="response-area" id="response-area" style="display:none">
+            <div class="response-meta">
+              <span class="response-label">Response</span>
+              <span class="status-badge" id="status-badge"></span>
+              <span class="response-time" id="response-time"></span>
+            </div>
+            <div class="response-code-wrapper">
+              <button class="copy-response-btn" id="copy-response-btn">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy
+              </button>
+              <pre id="response-output"></pre>
+            </div>
+          </div>
+
+        </div><!-- /fetch-form -->
+      </section>
+
+    </div><!-- /dashboard-grid -->
+  </div><!-- /page-wrapper -->
+
+  <script src="/javascripts/dashboard.js"></script>
+  
+</body>
+</html>

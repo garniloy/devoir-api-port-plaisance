@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reservations — Marina API Docs</title>
+  <link rel="stylesheet" href="/stylesheets/doc-page.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <a href="/" class="logo">Port de<span>Plaisance</span></a>
+      <nav class="header-nav">
+        <a href="/documentation" class="doc-link">Documentation</a>
+        <a href="/dashboard" class="doc-link">Dashboard</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+<div class="doc-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Getting Started</div>
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Introduction</a></li>
+        <li><a href="authentication.html">Authentication</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Resources</div>
+      <ul class="sidebar-nav">
+        <li><a href="catways.html">Catways</a></li>
+        <li><a href="reservations.html" class="active">Reservations</a></li>
+        <li><a href="users.html">Users</a></li>
+      </ul>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Endpoints</div>
+      <ul class="sidebar-nav">
+        <li><a href="#create-reservation"><span class="method-badge badge-post">POST</span> Create</a></li>
+        <li><a href="#get-all-reservations"><span class="method-badge badge-get">GET</span> List all</a></li>
+        <li><a href="#get-reservation"><span class="method-badge badge-get">GET</span> Get one</a></li>
+        <li><a href="#update-reservation"><span class="method-badge badge-put">PUT</span> Update</a></li>
+        <li><a href="#delete-reservation"><span class="method-badge badge-delete">DEL</span> Delete</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="doc-content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="breadcrumb">
+        <a href="/documentation">Documentation</a>
+        <span>›</span> Resources
+        <span>›</span> Reservations
+      </div>
+      <h1>Reservations</h1>
+      <p class="subtitle">Manage berth bookings nested under a catway — create, list, retrieve, update, and cancel reservations with built-in date conflict detection.</p>
+      <div class="base-url-bar">
+        <span class="label">Base URL</span>
+        <code>/catways/:id/reservations</code>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">ℹ️</span>
+      <div>
+        Reservations are <strong>nested under catways</strong>. Every request requires a valid <code>:id</code> (the <code>catwayNumber</code>) as a path parameter. See the <a href="catways.html" style="color:var(--blue)">Catways documentation</a> to understand the parent resource.
+      </div>
+    </div>
+
+    <!-- DATA MODEL -->
+    <div class="doc-section" id="data-model">
+      <h2>Data Model</h2>
+      <p>Each reservation is stored as a MongoDB document linked to its parent catway via <code>catwayNumber</code>.</p>
+
+      <div class="model-card">
+        <div class="model-card-header">
+          <span class="model-name">Reservation</span>
+          <span class="model-badge">MongoDB / Mongoose</span>
+        </div>
+        <table class="params-table">
+          <thead>
+            <tr><th>Field</th><th>Type</th><th>Constraints</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="param-name">_id</span></td>
+              <td><span class="param-type">ObjectId</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>MongoDB unique identifier, generated automatically. Used as <code>:idReservation</code> in routes.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">catwayNumber</span></td>
+              <td><span class="param-type">Number</span></td>
+              <td><span class="badge-required">required</span> ref</td>
+              <td>Foreign reference to the parent <code>Catway.catwayNumber</code>. Injected automatically from the URL — do not send in the body.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">clientName</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>Full name of the client making the reservation.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">boatName</span></td>
+              <td><span class="param-type">String</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>Name or identifier of the vessel being berthed.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">startDate</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>Start of the reservation period. ISO 8601 date string is recommended.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">endDate</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-required">required</span></td>
+              <td>End of the reservation period. Must be after <code>startDate</code>.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">createdAt</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>Timestamp of document creation, managed by Mongoose.</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">updatedAt</span></td>
+              <td><span class="param-type">Date</span></td>
+              <td><span class="badge-optional">auto</span></td>
+              <td>Timestamp of last modification, managed by Mongoose.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VALIDATION RULES -->
+    <div class="doc-section" id="validation">
+      <h2>Validation Rules</h2>
+      <ul class="validation-list">
+        <li>The <code>:id</code> path parameter must match an existing <code>catwayNumber</code>. If the catway doesn't exist, the request returns <code>404</code> before any reservation logic runs.</li>
+        <li><strong>catwayNumber</strong> is set server-side from the URL — never send it in the request body. If sent, it will be ignored or may cause unexpected behaviour on updates.</li>
+        <li>All four body fields (<code>clientName</code>, <code>boatName</code>, <code>startDate</code>, <code>endDate</code>) are mandatory on <strong>creation</strong>.</li>
+        <li><strong>Date conflict check</strong> — the API rejects any reservation whose period overlaps with an existing one on the same catway. Two reservations conflict if <code>startDate ≤ existingEnd AND endDate ≥ existingStart</code>.</li>
+        <li>Dates should be sent as ISO 8601 strings (e.g. <code>"2024-07-15"</code> or <code>"2024-07-15T10:00:00.000Z"</code>). Invalid date strings cause a Mongoose cast error and a <code>500</code> response.</li>
+        <li>On <strong>update</strong>, all body fields are accepted and spread directly onto the document. You are responsible for ensuring updated dates do not create new conflicts — the conflict check only runs on creation.</li>
+        <li>To find a specific reservation, the API matches both <code>_id</code> (as <code>:idReservation</code>) and <code>catwayNumber</code>. A reservation that exists but belongs to a different catway will return <code>404</code>.</li>
+      </ul>
+    </div>
+
+    <!-- ENDPOINTS -->
+    <div class="doc-section" id="endpoints">
+      <h2>Endpoints</h2>
+
+      <!-- POST create -->
+      <div class="endpoint-card" id="create-reservation">
+        <div class="endpoint-header">
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/catways/:id/reservations</span>
+          <span class="endpoint-summary">Create a reservation</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body open">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Books a berth for a given period. The API first verifies the catway exists, then checks for date conflicts before persisting the document.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">id</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The <code>catwayNumber</code> of the parent catway.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Request Body</h3>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">clientName</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Full name of the client.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">boatName</span></td>
+                <td><span class="param-type">string</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>Name of the vessel.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">startDate</span></td>
+                <td><span class="param-type">date</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>ISO 8601 start date string.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">endDate</span></td>
+                <td><span class="param-type">date</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>ISO 8601 end date string. Must be after <code>startDate</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper">
+            <div class="code-block">
+              <div class="code-block-header"><span class="code-lang">JSON Body</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+              <pre><code>{
+  <span class="tk">"clientName"</span>: <span class="ts">"Jean Dupont"</span>,
+  <span class="tk">"boatName"</span>:   <span class="ts">"Le Vent du Large"</span>,
+  <span class="tk">"startDate"</span>:  <span class="ts">"2024-07-15"</span>,
+  <span class="tk">"endDate"</span>:    <span class="ts">"2024-07-22"</span>
+}</code></pre>
+            </div>
+          </div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="r201">201 Created</button>
+              <button class="resp-tab" data-tab="r400">400 Conflict</button>
+              <button class="resp-tab" data-tab="r404">404 Catway</button>
+              <button class="resp-tab" data-tab="r500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="r201">
+              <span class="status-pill s2xx">● 201 Created</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"_id"</span>:          <span class="ts">"665b2a4d3e5c6b001d9e0f23"</span>,
+  <span class="tk">"catwayNumber"</span>: <span class="tn">5</span>,
+  <span class="tk">"clientName"</span>:  <span class="ts">"Jean Dupont"</span>,
+  <span class="tk">"boatName"</span>:    <span class="ts">"Le Vent du Large"</span>,
+  <span class="tk">"startDate"</span>:   <span class="ts">"2024-07-15T00:00:00.000Z"</span>,
+  <span class="tk">"endDate"</span>:     <span class="ts">"2024-07-22T00:00:00.000Z"</span>,
+  <span class="tk">"createdAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>,
+  <span class="tk">"updatedAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="r400">
+              <span class="status-pill s4xx">● 400 Date Conflict</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">The requested period overlaps with an existing reservation on the same catway.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Catway already reserved for this period"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="r404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">The catway identified by <code>:id</code> does not exist.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Catway not found"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="r500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error creating reservation"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-warning" style="margin-top:16px">
+            <span class="callout-icon">⚠️</span>
+            <div><strong>Real-world note:</strong> The conflict check uses an inclusive date range comparison — a reservation starting the same day another ends is considered a conflict. Plan for at least one day gap between consecutive bookings if your marina requires a turnover window.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET all reservations -->
+      <div class="endpoint-card" id="get-all-reservations">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/catways/:id/reservations</span>
+          <span class="endpoint-summary">List all reservations for a catway</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body open">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Returns all reservation documents for the given catway. Returns an empty array <code>[]</code> if none exist — no <code>404</code> is thrown for an empty list.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">id</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The <code>catwayNumber</code> of the parent catway.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tk">GET</span> /catways/5/reservations</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="rg200">200 OK</button>
+              <button class="resp-tab" data-tab="rg500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="rg200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>[
+  {
+    <span class="tk">"_id"</span>:          <span class="ts">"665b2a4d3e5c6b001d9e0f23"</span>,
+    <span class="tk">"catwayNumber"</span>: <span class="tn">5</span>,
+    <span class="tk">"clientName"</span>:  <span class="ts">"Jean Dupont"</span>,
+    <span class="tk">"boatName"</span>:    <span class="ts">"Le Vent du Large"</span>,
+    <span class="tk">"startDate"</span>:   <span class="ts">"2024-07-15T00:00:00.000Z"</span>,
+    <span class="tk">"endDate"</span>:     <span class="ts">"2024-07-22T00:00:00.000Z"</span>,
+    <span class="tk">"createdAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>,
+    <span class="tk">"updatedAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>
+  },
+  {
+    <span class="tk">"_id"</span>:          <span class="ts">"665b2a4d3e5c6b001d9e0f24"</span>,
+    <span class="tk">"catwayNumber"</span>: <span class="tn">5</span>,
+    <span class="tk">"clientName"</span>:  <span class="ts">"Marie Martin"</span>,
+    <span class="tk">"boatName"</span>:    <span class="ts">"Albatros III"</span>,
+    <span class="tk">"startDate"</span>:   <span class="ts">"2024-08-01T00:00:00.000Z"</span>,
+    <span class="tk">"endDate"</span>:     <span class="ts">"2024-08-10T00:00:00.000Z"</span>,
+    <span class="tk">"createdAt"</span>:   <span class="ts">"2024-06-05T14:00:00.000Z"</span>,
+    <span class="tk">"updatedAt"</span>:   <span class="ts">"2024-06-05T14:00:00.000Z"</span>
+  }
+]</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="rg500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error fetching reservations"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-tip" style="margin-top:16px">
+            <span class="callout-icon">💡</span>
+            <div><strong>Tip:</strong> An empty array <code>[]</code> is a valid <code>200</code> response — it simply means no reservations exist for that catway yet. This is different from the Catways list endpoint which returns <code>404</code> when empty.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GET one reservation -->
+      <div class="endpoint-card" id="get-reservation">
+        <div class="endpoint-header">
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/catways/:id/reservations/:idReservation</span>
+          <span class="endpoint-summary">Get a single reservation</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Returns one reservation identified by its MongoDB <code>_id</code>, scoped to the given catway.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">id</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The <code>catwayNumber</code> of the parent catway.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">idReservation</span></td>
+                <td><span class="param-type">ObjectId</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The MongoDB <code>_id</code> of the reservation.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tk">GET</span> /catways/5/reservations/665b2a4d3e5c6b001d9e0f23</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="ro200">200 OK</button>
+              <button class="resp-tab" data-tab="ro404">404 Not Found</button>
+              <button class="resp-tab" data-tab="ro500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="ro200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"_id"</span>:          <span class="ts">"665b2a4d3e5c6b001d9e0f23"</span>,
+  <span class="tk">"catwayNumber"</span>: <span class="tn">5</span>,
+  <span class="tk">"clientName"</span>:  <span class="ts">"Jean Dupont"</span>,
+  <span class="tk">"boatName"</span>:    <span class="ts">"Le Vent du Large"</span>,
+  <span class="tk">"startDate"</span>:   <span class="ts">"2024-07-15T00:00:00.000Z"</span>,
+  <span class="tk">"endDate"</span>:     <span class="ts">"2024-07-22T00:00:00.000Z"</span>,
+  <span class="tk">"createdAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>,
+  <span class="tk">"updatedAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ro404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returned if the reservation does not exist <em>or</em> belongs to a different catway.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Reservation not found"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ro500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error fetching reservation"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-info" style="margin-top:16px">
+            <span class="callout-icon">ℹ️</span>
+            <div>The query matches on <strong>both</strong> <code>_id</code> and <code>catwayNumber</code>. A valid reservation <code>_id</code> from a different catway will return <code>404</code> — this is intentional scoping behaviour.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PUT update -->
+      <div class="endpoint-card" id="update-reservation">
+        <div class="endpoint-header">
+          <span class="method-badge badge-put">PUT</span>
+          <span class="endpoint-path">/catways/:id/reservations/:idReservation</span>
+          <span class="endpoint-summary">Update a reservation</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Updates any field of a reservation. The entire request body is spread onto the document. Send only the fields you want to change.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">id</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The <code>catwayNumber</code> of the parent catway.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">idReservation</span></td>
+                <td><span class="param-type">ObjectId</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The MongoDB <code>_id</code> of the reservation to update.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Request Body</h3>
+          <table class="params-table">
+            <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><span class="param-name">clientName</span></td><td><span class="param-type">string</span></td><td><span class="badge-optional">optional</span></td><td>Updated client name.</td></tr>
+              <tr><td><span class="param-name">boatName</span></td><td><span class="param-type">string</span></td><td><span class="badge-optional">optional</span></td><td>Updated vessel name.</td></tr>
+              <tr><td><span class="param-name">startDate</span></td><td><span class="param-type">date</span></td><td><span class="badge-optional">optional</span></td><td>New start date. No conflict check is run.</td></tr>
+              <tr><td><span class="param-name">endDate</span></td><td><span class="param-type">date</span></td><td><span class="badge-optional">optional</span></td><td>New end date. No conflict check is run.</td></tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">JSON Body</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code>{
+  <span class="tk">"endDate"</span>: <span class="ts">"2024-07-25"</span>
+}</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="ru200">200 OK</button>
+              <button class="resp-tab" data-tab="ru404">404 Not Found</button>
+              <button class="resp-tab" data-tab="ru500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="ru200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:8px">Returns the updated reservation document.</p>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"_id"</span>:          <span class="ts">"665b2a4d3e5c6b001d9e0f23"</span>,
+  <span class="tk">"catwayNumber"</span>: <span class="tn">5</span>,
+  <span class="tk">"clientName"</span>:  <span class="ts">"Jean Dupont"</span>,
+  <span class="tk">"boatName"</span>:    <span class="ts">"Le Vent du Large"</span>,
+  <span class="tk">"startDate"</span>:   <span class="ts">"2024-07-15T00:00:00.000Z"</span>,
+  <span class="tk">"endDate"</span>:     <span class="ts">"2024-07-25T00:00:00.000Z"</span>,
+  <span class="tk">"createdAt"</span>:   <span class="ts">"2024-06-01T09:12:00.000Z"</span>,
+  <span class="tk">"updatedAt"</span>:   <span class="ts">"2024-06-03T11:30:00.000Z"</span>
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ru404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Reservation not found"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="ru500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error updating reservation"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="callout callout-danger" style="margin-top:16px">
+            <span class="callout-icon">🚨</span>
+            <div><strong>Real-world note:</strong> The update endpoint does <strong>not</strong> re-run the date conflict check. If you extend an <code>endDate</code> or shift a <code>startDate</code>, you must verify availability manually by calling <code>GET /catways/:id/reservations</code> first and checking for overlaps client-side.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DELETE reservation -->
+      <div class="endpoint-card" id="delete-reservation">
+        <div class="endpoint-header">
+          <span class="method-badge badge-delete">DELETE</span>
+          <span class="endpoint-path">/catways/:id/reservations/:idReservation</span>
+          <span class="endpoint-summary">Cancel a reservation</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="endpoint-body">
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:16px">
+            Permanently removes a reservation. Returns the deleted document for audit purposes.
+          </p>
+
+          <h3>Path Parameters</h3>
+          <table class="params-table">
+            <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="param-name">id</span></td>
+                <td><span class="param-type">number</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The <code>catwayNumber</code> of the parent catway.</td>
+              </tr>
+              <tr>
+                <td><span class="param-name">idReservation</span></td>
+                <td><span class="param-type">ObjectId</span></td>
+                <td><span class="badge-required">required</span></td>
+                <td>The MongoDB <code>_id</code> of the reservation to cancel.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="code-block-label">Request example</div>
+          <div class="code-block-wrapper"><div class="code-block">
+            <div class="code-block-header"><span class="code-lang">HTTP</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+            <pre><code><span class="tk">DELETE</span> /catways/5/reservations/665b2a4d3e5c6b001d9e0f23</code></pre>
+          </div></div>
+
+          <div class="response-section">
+            <div class="resp-tabs">
+              <button class="resp-tab active" data-tab="rd200">200 OK</button>
+              <button class="resp-tab" data-tab="rd404">404 Not Found</button>
+              <button class="resp-tab" data-tab="rd500">500 Error</button>
+            </div>
+            <div class="resp-panel active" data-tab="rd200">
+              <span class="status-pill s2xx">● 200 OK</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Reservation deleted"</span>,
+  <span class="tk">"reservation"</span>: {
+    <span class="tk">"_id"</span>:          <span class="ts">"665b2a4d3e5c6b001d9e0f23"</span>,
+    <span class="tk">"catwayNumber"</span>: <span class="tn">5</span>,
+    <span class="tk">"clientName"</span>:  <span class="ts">"Jean Dupont"</span>,
+    <span class="tk">"boatName"</span>:    <span class="ts">"Le Vent du Large"</span>,
+    <span class="tk">"startDate"</span>:   <span class="ts">"2024-07-15T00:00:00.000Z"</span>,
+    <span class="tk">"endDate"</span>:     <span class="ts">"2024-07-22T00:00:00.000Z"</span>
+  }
+}</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="rd404">
+              <span class="status-pill s4xx">● 404 Not Found</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{ <span class="tk">"message"</span>: <span class="ts">"Reservation not found"</span> }</code></pre>
+              </div></div>
+            </div>
+            <div class="resp-panel" data-tab="rd500">
+              <span class="status-pill s5xx">● 500 Internal Server Error</span>
+              <div class="code-block-wrapper"><div class="code-block">
+                <div class="code-block-header"><span class="code-lang">JSON</span><button class="copy-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy</button></div>
+                <pre><code>{
+  <span class="tk">"message"</span>: <span class="ts">"Error deleting reservation"</span>,
+  <span class="tk">"error"</span>:   <span class="ts">"..."</span>
+}</code></pre>
+              </div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /endpoints section -->
+
+    <!-- FOOTER -->
+    <div class="doc-footer">
+      <a href="catways.html">← Catways</a>
+      <a href="users.html">Next: Users →</a>
+    </div>
+
+  </main>
+
+  <!-- TABLE OF CONTENTS -->
+  <aside class="toc-col">
+    <div class="toc-box">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <li><a href="#data-model">Data Model</a></li>
+        <li><a href="#validation">Validation Rules</a></li>
+        <li><a href="#endpoints">Endpoints</a></li>
+        <li><a href="#create-reservation">POST — Create</a></li>
+        <li><a href="#get-all-reservations">GET — List all</a></li>
+        <li><a href="#get-reservation">GET — Get one</a></li>
+        <li><a href="#update-reservation">PUT — Update</a></li>
+        <li><a href="#delete-reservation">DELETE — Cancel</a></li>
+      </ul>
+    </div>
+  </aside>
+
+</div>
+</div>
+
+<script src="/javascripts/doc-page.js"></script>
+</body>
+</html>

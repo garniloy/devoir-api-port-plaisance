@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documentation — Marina API</title>
+  <link rel="stylesheet" href="/stylesheets/doc.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container">
+    <div class="header-content">
+      <a href="/" class="logo">Port de<span>Plaisance</span></a>
+      <nav class="header-nav">
+        <a href="/documentation" class="doc-link" >Documentation</a>
+        <a href="/dashboard" class="doc-link">Dashboard</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="container">
+
+    <!-- HERO -->
+    <div class="index-hero">
+      <div class="eyebrow">Marina API · v1.0</div>
+      <h1>API Documentation</h1>
+      <p>Complete reference for all CRUD operations across the three core resources — Users, Catways, and Reservations. Pick a resource below to get started.</p>
+    </div>
+
+    <!-- RESOURCE CARDS -->
+    <div class="section-heading">Resources</div>
+    <div class="resources-grid">
+
+      <a href="/documentation/users" class="resource-card">
+        <div class="resource-card-icon icon-users">👤</div>
+        <h3>Users</h3>
+        <p>Manage marina operator accounts. Register, retrieve, update credentials, and delete user profiles.</p>
+        <div class="method-tags">
+          <span class="method-badge badge-post">POST</span>
+          <span class="method-badge badge-get">GET</span>
+          <span class="method-badge badge-put">PUT</span>
+          <span class="method-badge badge-delete">DELETE</span>
+        </div>
+        <div class="resource-card-footer">
+          <span class="endpoint-count">5 endpoints</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="/documentation/catways" class="resource-card">
+        <div class="resource-card-icon icon-catways">⚓</div>
+        <h3>Catways</h3>
+        <p>Create and manage marina berth slots. Each catway has a type (<code style="font-size:0.78rem">short</code> / <code style="font-size:0.78rem">long</code>) and a free-text condition state.</p>
+        <div class="method-tags">
+          <span class="method-badge badge-post">POST</span>
+          <span class="method-badge badge-get">GET</span>
+          <span class="method-badge badge-put">PUT</span>
+          <span class="method-badge badge-delete">DELETE</span>
+        </div>
+        <div class="resource-card-footer">
+          <span class="endpoint-count">5 endpoints</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+      <a href="/documentation/reservations" class="resource-card">
+        <div class="resource-card-icon icon-reservations">📅</div>
+        <h3>Reservations</h3>
+        <p>Book berths for clients. Nested under catways. Includes built-in date conflict detection on creation.</p>
+        <div class="method-tags">
+          <span class="method-badge badge-post">POST</span>
+          <span class="method-badge badge-get">GET</span>
+          <span class="method-badge badge-put">PUT</span>
+          <span class="method-badge badge-delete">DELETE</span>
+        </div>
+        <div class="resource-card-footer">
+          <span class="endpoint-count">5 endpoints</span>
+          <span class="card-arrow">→</span>
+        </div>
+      </a>
+
+    </div><!-- /resources-grid -->
+
+    <!-- QUICK REFERENCE TABLE -->
+    <div class="section-heading">Quick Reference</div>
+    <div class="quick-ref">
+      <div class="quick-ref-header">All endpoints at a glance</div>
+      <table class="quick-ref-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Description</th>
+            <th>Docs</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method-badge badge-post">POST</span></td>
+            <td class="qr-path">/users</td>
+            <td class="qr-desc">Register a new user</td>
+            <td><a href="/documentation/users#register" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-get">GET</span></td>
+            <td class="qr-path">/users</td>
+            <td class="qr-desc">List all users</td>
+            <td><a href="/documentation/users#get-all-users" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-get">GET</span></td>
+            <td class="qr-path">/users/:email</td>
+            <td class="qr-desc">Get a single user by email</td>
+            <td><a href="/documentation/users#get-user" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-put">PUT</span></td>
+            <td class="qr-path">/users/:email</td>
+            <td class="qr-desc">Update a user</td>
+            <td><a href="/documentation/users#update-user" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-delete">DELETE</span></td>
+            <td class="qr-path">/users/:email</td>
+            <td class="qr-desc">Delete a user</td>
+            <td><a href="/documentation/users#delete-user" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-post">POST</span></td>
+            <td class="qr-path">/catways</td>
+            <td class="qr-desc">Create a catway</td>
+            <td><a href="/documentation/catways#create-catway" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-get">GET</span></td>
+            <td class="qr-path">/catways</td>
+            <td class="qr-desc">List all catways</td>
+            <td><a href="/documentation/catways#get-all-catways" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-get">GET</span></td>
+            <td class="qr-path">/catways/:catwayNumber</td>
+            <td class="qr-desc">Get a single catway</td>
+            <td><a href="/documentation/catways#get-catway" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-put">PUT</span></td>
+            <td class="qr-path">/catways/:catwayNumber</td>
+            <td class="qr-desc">Update a catway</td>
+            <td><a href="/documentation/catways#update-catway" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-delete">DELETE</span></td>
+            <td class="qr-path">/catways/:catwayNumber</td>
+            <td class="qr-desc">Delete a catway</td>
+            <td><a href="/documentation/catways#delete-catway" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-post">POST</span></td>
+            <td class="qr-path">/catways/:id/reservations</td>
+            <td class="qr-desc">Create a reservation</td>
+            <td><a href="/documentation/reservations#create-reservation" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-get">GET</span></td>
+            <td class="qr-path">/catways/:id/reservations</td>
+            <td class="qr-desc">List all reservations for a catway</td>
+            <td><a href="/documentation/reservations#get-all-reservations" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-get">GET</span></td>
+            <td class="qr-path">/catways/:id/reservations/:idReservation</td>
+            <td class="qr-desc">Get a single reservation</td>
+            <td><a href="/documentation/reservations#get-reservation" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-put">PUT</span></td>
+            <td class="qr-path">/catways/:id/reservations/:idReservation</td>
+            <td class="qr-desc">Update a reservation</td>
+            <td><a href="/documentation/reservations#update-reservation" class="qr-link">View →</a></td>
+          </tr>
+          <tr>
+            <td><span class="method-badge badge-delete">DELETE</span></td>
+            <td class="qr-path">/catways/:id/reservations/:idReservation</td>
+            <td class="qr-desc">Cancel a reservation</td>
+            <td><a href="/documentation/reservations#delete-reservation" class="qr-link">View →</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div><!-- /quick-ref -->
+
+    <!-- CONVENTIONS -->
+    <div class="section-heading">Conventions</div>
+    <div class="conventions-grid">
+      <div class="convention-card">
+        <h4>Request format</h4>
+        <ul>
+          <li>All request bodies must be JSON with <code style="font-size:0.78rem">Content-Type: application/json</code></li>
+          <li>Path parameters are documented on each endpoint</li>
+          <li>Dates should be sent as ISO 8601 strings (e.g. <code style="font-size:0.78rem">2024-07-15</code>)</li>
+          <li>Email addresses in URLs should be percent-encoded (<code style="font-size:0.78rem">%40</code> for <code style="font-size:0.78rem">@</code>)</li>
+        </ul>
+      </div>
+      <div class="convention-card">
+        <h4>Response format</h4>
+        <ul>
+          <li>All responses are JSON</li>
+          <li>Successful creates return <code style="font-size:0.78rem">201</code>, reads and updates return <code style="font-size:0.78rem">200</code></li>
+          <li>Errors include an <code style="font-size:0.78rem">issue</code> or <code style="font-size:0.78rem">message</code> field and a <code style="font-size:0.78rem">details</code> or <code style="font-size:0.78rem">error</code> field</li>
+          <li>Timestamps (<code style="font-size:0.78rem">createdAt</code>, <code style="font-size:0.78rem">updatedAt</code>) are always UTC ISO 8601</li>
+        </ul>
+      </div>
+      <div class="convention-card">
+        <h4>Resource identifiers</h4>
+        <ul>
+          <li>Catways are identified by <code style="font-size:0.78rem">catwayNumber</code> (integer), not <code style="font-size:0.78rem">_id</code></li>
+          <li>Reservations are identified by their MongoDB <code style="font-size:0.78rem">_id</code> (ObjectId)</li>
+          <li>Users are identified by <code style="font-size:0.78rem">email</code> address</li>
+        </ul>
+      </div>
+      <div class="convention-card">
+        <h4>Data storage</h4>
+        <ul>
+          <li>All data is persisted in MongoDB via Mongoose</li>
+          <li>User passwords are hashed with bcrypt (cost 10) and never returned</li>
+          <li>Reservations are nested under catways — always scope requests with a valid <code style="font-size:0.78rem">:id</code></li>
+        </ul>
+      </div>
+    </div><!-- /conventions-grid -->
+
+    <!-- FOOTER -->
+    <div class="index-footer">
+      <a href="/">← Back to home</a>
+      <span>Marina API · v1.0</span>
+    </div>
+
+  </div><!-- /container -->
+</main>
+
+<script src="docs.js"></script>
+</body>
+</html>
